@@ -1,105 +1,67 @@
-README — WiFi vs Bluetooth Interference Study (technical)
-=========================================================
+# Agent Notes
 
-Cel
-----
-Krótko: zmierzyć wpływ interferencji Bluetooth (model uproszczony) na przepustowość WiFi 2.4GHz.
-Repozytorium zawiera: kod symulacji ns-3, skrypt batchowy do wielorunów oraz skrypt do wizualizacji wyników.
+Krótki stan projektu do szybkiego powrotu.
 
-Główne pliki i ich rola
-------------------------
-- `src/bt-wifi-interference-sim.cc` — główny program symulacji (ns-3, C++).
-  README — WiFi vs Bluetooth Interference Study (technical)
-  =========================================================
+## O co tu chodzi
+To jest projekt o wpływie interferencji w paśmie 2.4 GHz na wydajność WiFi. W repo są dwa główne eksperymenty symulacyjne w ns-3:
+- Bluetooth/WiFi interference study
+- Microwave/WiFi interference study
 
-  Cel
-  ---
-  Krótko: zmierzyć wpływ Bluetooth-like interferera na przepustowość WiFi w paśmie 2.4 GHz, z naciskiem na powtarzalny pipeline symulacja -> CSV -> wykresy.
+Każdy eksperyment ma trzy warstwy:
+- symulacja C++ w `src/`
+- batch runner w `scripts/`
+- plotter w `scripts/`
 
-  Główne pliki i ich rola
-  -----------------------
-  - `src/bt-wifi-interference-sim.cc` — główny program symulacji (ns-3, C++).
-    - Tworzy 3 węzły: AP, STA (telefon), BT (słuchawki / jammer).
-    - WiFi działa przez `SpectrumWifiPhy` w 2.4 GHz, żeby foreign signal mógł wpłynąć na PHY.
-    - AP -> STA: `OnOffHelper` UDP, a odbiór liczy `PacketSink`.
-    - BT: hopujący, burstowy interferer na poziomie spektrum, z presetem `s24-liberty4` dla kalibracji.
+Wyniki trafiają do `results/` i są rozdzielone na osobne katalogi dla Bluetooth i mikrofalówki.
 
-  - `scripts/run_sweep.sh` — runner bashowy do uruchomień statystycznych.
-    - Wejście: liczba powtórzeń (NUM_RUNS) i plik CSV wyjściowy.
-    - Dla każdego powtórzenia uruchamia symulację dwukrotnie: BT OFF i BT ON.
-    - Aktualnie uruchamia profil bazowy; jeśli chcesz kalibrację pod konkretny sprzęt, użyj `--device-profile` bezpośrednio w binarce.
+## Cel pracy
+- Porównać wpływ różnych źródeł zakłóceń na throughput WiFi.
+- Utrzymać wyniki w formie powtarzalnych sweepów po `rng_run`.
+- Mieć wykresy i CSV gotowe do raportu.
 
-  - `scripts/plot_results.py` — skrypt do wczytania CSV i wygenerowania wykresów.
-    - Wymaga: `matplotlib`, `pandas`, `numpy` (używamy wirtualnego środowiska w repo: `../.venv/bin/python` w Makefile).
-    - Generuje: `throughput_comparison.png` i `throughput_distribution.png`.
+## Forma raportu
+- Pliki wynikowe i wykresy są podstawą do sekcji raportu.
+- `REPORT_RESULTS.md` i `REPORT_EVALUATION_SETUP.md` zawierają wersje robocze opisu.
+- Nie dopisuj do nich odniesień do PDF-a o realnym eksperymencie mikrofalowym; był tylko referencją roboczą.
 
-  - `Makefile` — ułatwiający workflow:
-    - `make build` — buduje (CMake + make)
-    - `make run-batch NUM_RUNS=N` — uruchamia `scripts/run_sweep.sh` (N powtórzeń)
-    - `make plot` — generuje wykresy używając venv (`../.venv/bin/python`)
-    - `make all NUM_RUNS=N` — build + run-batch + plot
+## Jak myśleć o danych
+- BT jest teraz ustawione na zakres `rng_run 145..165`.
+- Mikrofalówka ma model pulsacyjny, bo model ciągły dawał zbyt ekstremalne tłumienie.
+- Jeśli wynik wygląda zbyt skrajnie, najpierw sprawdź moc, duty cycle i okres emisji.
 
-  Wyniki (format CSV)
-  -------------------
-  Każdy wiersz ma kolumny:
-  ```
-  rng_run,bluetooth_enabled,distance_m,simulation_time_s,rx_packets,rx_bytes,throughput_mbps
-  ```
-  - `throughput_mbps` obliczane jest z `rx_bytes / simulation_time`.
-  - `bluetooth_enabled`: 0 = wyłączony, 1 = włączony
+## Zalecenia dla agenta
+- Najpierw sprawdź, czy zmiana dotyczy BT czy mikrofalówki.
+- Przed edycją pliku sprawdź, czy są aktualne wyniki w `results/`.
+- Jeśli zmieniasz model symulacji, od razu uruchom build i jeden krótki run.
+- Jeśli zmieniasz batch albo plot, porównaj ścieżki z `Makefile`.
+- Usuwaj stare artefakty tylko wtedy, gdy nowy zakres danych już jest wygenerowany.
 
-  Uruchomienie symulacji z kalibracją pod Samsung S24 + Soundcore Liberty 4
-  -------------------------------------------------------------------------
-  Poniżej przykład uruchomienia pojedynczego przebiegu z presetem, który najbliżej odwzorowuje realny test:
+## Co tu jest
+- `src/bt-wifi-interference-sim.cc` - symulacja Bluetooth/WiFi.
+- `src/microwave-interference-sim.cc` - symulacja mikrofalówki.
+- `scripts/run_bluetooth_sweep.sh` - batch dla BT.
+- `scripts/plot_bluetooth_results.py` - wykresy dla BT.
+- `scripts/run_microwave_sweep.sh` - batch dla mikrofalówki.
+- `scripts/plot_microwave_results.py` - wykresy dla mikrofalówki.
+- `results/bluetooth/` - aktualne dane BT.
+- `results/microwave/` - aktualne dane mikrofalówka.
 
-  ```bash
-  ./build/bin/bt-wifi-interference-sim \
-    --device-profile=s24-liberty4 \
-    --bluetooth-enabled=true \
-    --rng-run=1 \
-    --simulation-time=5s \
-    --distance=10 \
-    --output-csv=results/wifi-bluetooth-results.csv
-  ```
+## Aktualny stan
+- BT workflow jest ustawiony na zakres `rng_run 145..165`.
+- Obecny plik BT CSV: `results/bluetooth/s24-liberty4-sweep-145-165.csv`.
+- Stare BT CSV-y zostały usunięte z repo.
+- Mikrofalówka działa jako model pulsacyjny, nie ciągły.
+- Domyślne wyniki mikrofalówki są w `results/microwave/microwave-sweep.csv`.
 
-  W tym presete WiFi jest podbite do 802.11ax na 2.4 GHz z 40 MHz, a BT działa jak bliski, hopujący interferer z niską mocą i burstami.
+## Najważniejsze komendy
+- `make build`
+- `make run-bt-batch NUM_RUNS=21 START_RUN=145`
+- `make plot-bt`
+- `make run-microwave-batch NUM_RUNS=3`
+- `make plot-microwave`
+- `make clean`
 
-  Jak interpretować wyniki
-  ------------------------
-  - Jeżeli zaoferowana szybkość >> możliwość PHY, obserwujemy saturację i rzeczywista `throughput_mbps` będzie niższa.
-  - Porównując BT off/on patrz na średnie i odchylenia standardowe z wielu RNG-runów.
-
-  Przykładowy eksperyment — krok po kroku
-  ---------------------------------------
-  1. Zbuduj:
-
-  ```bash
-  make build
-  ```
-
-  2. Szybki test w kalibracji pod konkretny telefon/słuchawki:
-
-  ```bash
-  ./build/bin/bt-wifi-interference-sim --device-profile=s24-liberty4 --bluetooth-enabled=false --rng-run=1
-  ./build/bin/bt-wifi-interference-sim --device-profile=s24-liberty4 --bluetooth-enabled=true --rng-run=1
-  ```
-
-  3. Batch sweep i wykresy: użyj `make run-batch` / `make plot` dla baseline albo uruchom własny batch z presetem ręcznie, jeśli zależy Ci na kalibracji pod S24.
-
-  Wskazówki dla kolejnego agenta / dewelopera
-  -------------------------------------------
-  - Kod symulacji jest już na poziomie spectrum jammera, nie prostego UDP proxy.
-  - Jeśli chcesz modelować Bluetooth dokładniej, kolejne sensowne kroki to:
-    - dopasowanie mocy i duty cycle do realnych śladów audio,
-    - prawdziwszy AFH/FHSS,
-    - walidacja przeciw pomiarom z urządzeń referencyjnych.
-  - Jeśli planujesz duże numery przebiegów (np. >100), użyj batchowania i rozważ równoległe uruchamianie na klastrze.
-
-  Dalsze kroki / rozszerzenia
-  ---------------------------
-  - Sweep odległości (np. 5,10,20,30 m)
-  - Dalsza kalibracja BT pod pomiary z prawdziwego telefonu i słuchawek
-  - Raportowanie dodatkowych metryk: opóźnienie, jitter, utracone pakiety
-../.venv/bin/python scripts/plot_results.py --csv results/sweep_results.csv --output-dir results
-
-```
+## Uwaga
+- `BWS__Projekt2.pdf` jest lokalnie w `.gitignore` i nie powinien wracać do repo.
+- Jeśli trzeba wrócić do raportu, patrz: `REPORT_RESULTS.md` i `REPORT_EVALUATION_SETUP.md`.
+- Jeśli trzeba wrócić do nowych danych, najpierw sprawdź `results/bluetooth/` i `results/microwave/`.
