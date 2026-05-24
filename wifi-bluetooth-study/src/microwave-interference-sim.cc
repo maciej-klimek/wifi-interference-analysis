@@ -148,9 +148,11 @@ int main(int argc, char* argv[])
     double microwaveY = 1.5;
     double microwaveOnStartSeconds = 4.0;
     double microwaveOnStopSeconds = 8.0;
-    double microwavePowerDbm = 0.0;
+    double microwavePowerDbm = -10.0;
     double microwaveCenterFrequencyMhz = 2450.0;
     double microwaveBandwidthMhz = 20.0;
+    double microwavePeriodSeconds = 0.05;
+    double microwaveDutyCycle = 0.35;
 
     CommandLine cmd(__FILE__);
     cmd.AddValue("microwave-enabled", "Enable microwave interferer", microwaveEnabled);
@@ -173,6 +175,8 @@ int main(int argc, char* argv[])
     cmd.AddValue("mw-power-dbm", "Microwave leakage power in dBm", microwavePowerDbm);
     cmd.AddValue("mw-center-frequency-mhz", "Microwave center frequency in MHz", microwaveCenterFrequencyMhz);
     cmd.AddValue("mw-bandwidth-mhz", "Microwave occupied bandwidth in MHz", microwaveBandwidthMhz);
+    cmd.AddValue("mw-period-s", "Microwave emission period in seconds", microwavePeriodSeconds);
+    cmd.AddValue("mw-duty-cycle", "Microwave emission duty cycle", microwaveDutyCycle);
     cmd.Parse(argc, argv);
 
     if (deviceProfileStr == "kitchen-microwave")
@@ -188,9 +192,11 @@ int main(int argc, char* argv[])
         microwaveY = 1.5;
         microwaveOnStartSeconds = 4.0;
         microwaveOnStopSeconds = 8.0;
-        microwavePowerDbm = 0.0;
+        microwavePowerDbm = -10.0;
         microwaveCenterFrequencyMhz = 2450.0;
         microwaveBandwidthMhz = 20.0;
+        microwavePeriodSeconds = 0.05;
+        microwaveDutyCycle = 0.35;
     }
 
     if (microwaveOnStopSeconds <= microwaveOnStartSeconds)
@@ -201,6 +207,16 @@ int main(int argc, char* argv[])
     if (microwaveOnStopSeconds > simTime.GetSeconds())
     {
         NS_FATAL_ERROR("Microwave stop time must be within the simulation time");
+    }
+
+    if (microwavePeriodSeconds <= 0.0)
+    {
+        NS_FATAL_ERROR("Microwave period must be positive");
+    }
+
+    if (microwaveDutyCycle < 0.0 || microwaveDutyCycle > 1.0)
+    {
+        NS_FATAL_ERROR("Microwave duty cycle must be within [0, 1]");
     }
 
     RngSeedManager::SetRun(rngRun);
@@ -329,8 +345,8 @@ int main(int argc, char* argv[])
         WaveformGeneratorHelper waveformGeneratorHelper;
         waveformGeneratorHelper.SetChannel(spectrumChannel);
         waveformGeneratorHelper.SetTxPowerSpectralDensity(microwavePsd);
-        waveformGeneratorHelper.SetPhyAttribute("Period", TimeValue(Seconds(1.0)));
-        waveformGeneratorHelper.SetPhyAttribute("DutyCycle", DoubleValue(1.0));
+        waveformGeneratorHelper.SetPhyAttribute("Period", TimeValue(Seconds(microwavePeriodSeconds)));
+        waveformGeneratorHelper.SetPhyAttribute("DutyCycle", DoubleValue(microwaveDutyCycle));
 
         NetDeviceContainer microwaveDevices = waveformGeneratorHelper.Install(nodes.Get(3));
         Ptr<WaveformGenerator> microwaveWaveform = microwaveDevices.Get(0)

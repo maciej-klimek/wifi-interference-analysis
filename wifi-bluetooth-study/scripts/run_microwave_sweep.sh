@@ -26,9 +26,11 @@ BIN_WIDTH=${BIN_WIDTH:-100ms}
 MICROWAVE_ENABLED=${MICROWAVE_ENABLED:-true}
 MW_ON_START=${MW_ON_START:-4.0}
 MW_ON_STOP=${MW_ON_STOP:-8.0}
-MW_POWER_DBM=${MW_POWER_DBM:-0.0}
+MW_POWER_DBM=${MW_POWER_DBM:--10.0}
 MW_CENTER_FREQ_MHZ=${MW_CENTER_FREQ_MHZ:-2450.0}
 MW_BANDWIDTH_MHZ=${MW_BANDWIDTH_MHZ:-20.0}
+MW_PERIOD_S=${MW_PERIOD_S:-0.05}
+MW_DUTY_CYCLE=${MW_DUTY_CYCLE:-0.35}
 SIM_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 NS3_DIR="${SIM_DIR}/../ns3"
 BUILD_DIR="${SIM_DIR}/build"
@@ -52,6 +54,7 @@ echo "Microwave enabled: $MICROWAVE_ENABLED"
 echo "Microwave window: ${MW_ON_START}s .. ${MW_ON_STOP}s"
 echo "Microwave power: ${MW_POWER_DBM} dBm"
 echo "Microwave center/bandwidth: ${MW_CENTER_FREQ_MHZ} MHz / ${MW_BANDWIDTH_MHZ} MHz"
+echo "Microwave period/duty: ${MW_PERIOD_S}s / ${MW_DUTY_CYCLE}"
 echo "Simulation dir: $SIM_DIR"
 echo "NS3 dir: $NS3_DIR"
 echo ""
@@ -97,6 +100,8 @@ for run in $(seq "${START_RUN}" "${END_RUN}"); do
         --mw-power-dbm="${MW_POWER_DBM}" \
         --mw-center-frequency-mhz="${MW_CENTER_FREQ_MHZ}" \
         --mw-bandwidth-mhz="${MW_BANDWIDTH_MHZ}" \
+        --mw-period-s="${MW_PERIOD_S}" \
+        --mw-duty-cycle="${MW_DUTY_CYCLE}" \
         --output-csv="${OUTPUT_CSV}"
     echo -e "${GREEN}✓${NC}"
 done
