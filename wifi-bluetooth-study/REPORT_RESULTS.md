@@ -23,7 +23,7 @@ Wykres porównawczy pokazuje efekt pierwszego rzędu: średnią przepustowość 
 
 ### Figura
 
-- [Porównanie średniej przepustowości](results/bluetooth/figures-sweep-1-20/throughput_comparison.svg)
+- [Porównanie średniej przepustowości](results/bluetooth/throughput_comparison.svg)
 
 ### Co pokazuje
 
@@ -49,7 +49,7 @@ W tej serii występuje też jeden bardzo silny outlier: dla `rng_run = 9` throug
 
 ### Dodatkowy wykres rozkładu
 
-- [Rozkład wyników per run](results/bluetooth/figures-sweep-1-20/throughput_distribution.svg)
+- [Rozkład wyników per run](results/bluetooth/throughput_distribution.svg)
 
 ### Co pokazuje
 
@@ -63,7 +63,7 @@ Ten wykres pokazuje punkty pomiarowe z każdego runu, a więc ujawnia pełny ksz
 
 ### Wykres parowany
 
-- [Porównanie per run](results/bluetooth/figures-sweep-1-20/throughput_paired_runs.svg)
+- [Porównanie per run](results/bluetooth/throughput_convergence.svg)
 
 ### Co pokazuje
 
@@ -77,7 +77,7 @@ Sam wykres słupkowy pokazuje wyłącznie średnią. Wykres parowany pozwala por
 
 ### Wykres zbieżności
 
-- [Zbieżność średniej i 95% CI](results/bluetooth/figures-sweep-1-20/throughput_convergence.svg)
+- [Zbieżność średniej i 95% CI](results/bluetooth/throughput_convergence.svg)
 
 Ten wykres ma cztery panele: skumulowaną średnią BT off, skumulowaną średnią BT on, skumulowaną stratę throughputu w Mbps oraz skumulowaną redukcję procentową. Dzięki temu nie mieszamy różnych skal na jednej osi, a jednocześnie widać zarówno stabilność estymatora, jak i ewolucję efektu interferencji.
 
@@ -99,10 +99,10 @@ Ta seria służy jako kontrola stabilności. Chodzi o sprawdzenie, czy wyniki z 
 
 ### Figura
 
-- [Porównanie średniej przepustowości](results/bluetooth/figures-sweep-145-155/throughput_comparison.svg)
-- [Rozkład wyników per run](results/bluetooth/figures-sweep-145-155/throughput_distribution.svg)
-- [Porównanie per run](results/bluetooth/figures-sweep-145-155/throughput_paired_runs.svg)
-- [Zbieżność średniej i 95% CI](results/bluetooth/figures-sweep-145-155/throughput_convergence.svg)
+- [Porównanie średniej przepustowości](results/bluetooth/throughput_comparison.svg)
+- [Rozkład wyników per run](results/bluetooth/throughput_distribution.svg)
+- [Porównanie per run](results/bluetooth/throughput_convergence.svg)
+- [Zbieżność średniej i 95% CI](results/bluetooth/throughput_convergence.svg)
 
 ### Liczby
 

@@ -153,17 +153,17 @@ Bluetooth on:
 Run paired BT off / BT on experiments across multiple RNG seeds:
 
 ```bash
-bash scripts/run_bluetooth_sweep.sh 20 results/bluetooth/s24-liberty4-sweep.csv
+bash scripts/run_bluetooth_sweep.sh 21 results/bluetooth/s24-liberty4-sweep-145-165.csv s24-liberty4 145
 ```
 
-This generates 40 rows total for `NUM_RUNS=20`: one BT-off and one BT-on row per seed.
+This generates 42 rows total for `NUM_RUNS=21`: one BT-off and one BT-on row per seed.
 
 ## Plotting
 
 Generate the figures from the CSV:
 
 ```bash
-python3 scripts/plot_bluetooth_results.py --csv results/bluetooth/s24-liberty4-sweep.csv --output-dir results/bluetooth
+python3 scripts/plot_bluetooth_results.py --csv results/bluetooth/s24-liberty4-sweep-145-165.csv --output-dir results/bluetooth
 ```
 
 The plotting script currently writes:

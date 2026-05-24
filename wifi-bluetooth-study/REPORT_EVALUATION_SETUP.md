@@ -194,8 +194,7 @@ To proste przybliżenie jest wystarczające do opisu tendencji w tym projekcie, 
 
 Po przetworzeniu CSV otrzymujemy zestawy figur zapisane w osobnych katalogach:
 
-- `results/bluetooth/figures-sweep-1-20/`
-- `results/bluetooth/figures-sweep-145-155/`
+- `results/bluetooth/`
 
 W każdym katalogu są trzy główne wykresy:
 
@@ -213,13 +212,13 @@ Batch uruchamia symulację osobno dla BT off i BT on, a następnie zapisuje oba 
 Przykład dla głównej serii:
 
 ```bash
-bash scripts/run_bluetooth_sweep.sh 20 results/bluetooth/s24-liberty4-sweep.csv s24-liberty4 1
+bash scripts/run_bluetooth_sweep.sh 21 results/bluetooth/s24-liberty4-sweep-145-165.csv s24-liberty4 145
 ```
 
 Przykład dla serii kontrolnej:
 
 ```bash
-bash scripts/run_bluetooth_sweep.sh 11 results/bluetooth/s24-liberty4-sweep-145-155.csv s24-liberty4 145
+bash scripts/run_bluetooth_sweep.sh 21 results/bluetooth/s24-liberty4-sweep-145-165.csv s24-liberty4 145
 ```
 
 To podejście daje bezpośrednio porównywalne pary wyników i ułatwia ocenę nie tylko średniej, ale też rozrzutu oraz punktów odstających.

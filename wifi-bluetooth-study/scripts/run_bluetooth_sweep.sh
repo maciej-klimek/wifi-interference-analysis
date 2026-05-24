@@ -9,7 +9,7 @@
 # Usage:
 #   ./scripts/run_bluetooth_sweep.sh [num_runs] [output_csv] [device_profile] [start_run]
 # Environment overrides are also supported, for example:
-#   NUM_RUNS=10 OUTPUT_CSV=results/bluetooth/s24-liberty4-sweep.csv ./scripts/run_bluetooth_sweep.sh
+#   NUM_RUNS=10 OUTPUT_CSV=results/bluetooth/s24-liberty4-sweep-145-165.csv ./scripts/run_bluetooth_sweep.sh
 #
 # Example:
 #   ./scripts/run_sweep.sh 10 results/sweep_results.csv
@@ -19,7 +19,7 @@ set -e
 
 # Configuration
 NUM_RUNS=${NUM_RUNS:-${1:-10}}
-OUTPUT_CSV=${OUTPUT_CSV:-${2:-results/bluetooth/s24-liberty4-sweep.csv}}
+OUTPUT_CSV=${OUTPUT_CSV:-${2:-results/bluetooth/s24-liberty4-sweep-145-165.csv}}
 DEVICE_PROFILE=${DEVICE_PROFILE:-${3:-s24-liberty4}}
 START_RUN=${START_RUN:-${4:-1}}
 SIMULATION_TIME=${SIMULATION_TIME:-10s}
