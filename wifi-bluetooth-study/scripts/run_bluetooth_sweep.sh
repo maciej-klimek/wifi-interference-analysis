@@ -7,7 +7,9 @@
 # and collects results into a CSV file for statistical analysis.
 #
 # Usage:
-#   ./scripts/run_sweep.sh [num_runs] [output_csv]
+#   ./scripts/run_bluetooth_sweep.sh [num_runs] [output_csv] [device_profile] [start_run]
+# Environment overrides are also supported, for example:
+#   NUM_RUNS=10 OUTPUT_CSV=results/bluetooth/s24-liberty4-sweep.csv ./scripts/run_bluetooth_sweep.sh
 #
 # Example:
 #   ./scripts/run_sweep.sh 10 results/sweep_results.csv
@@ -16,8 +18,12 @@
 set -e
 
 # Configuration
-NUM_RUNS=${1:-10}
-OUTPUT_CSV=${2:-results/sweep_results.csv}
+NUM_RUNS=${NUM_RUNS:-${1:-10}}
+OUTPUT_CSV=${OUTPUT_CSV:-${2:-results/bluetooth/s24-liberty4-sweep.csv}}
+DEVICE_PROFILE=${DEVICE_PROFILE:-${3:-s24-liberty4}}
+START_RUN=${START_RUN:-${4:-1}}
+SIMULATION_TIME=${SIMULATION_TIME:-10s}
+DISTANCE=${DISTANCE:-10}
 SIM_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 NS3_DIR="${SIM_DIR}/../ns3"
 BUILD_DIR="${SIM_DIR}/build"
@@ -34,6 +40,10 @@ echo -e "${GREEN}WiFi-Bluetooth Interference Study - Batch Runner${NC}"
 echo "======================================================"
 echo "Number of runs: $NUM_RUNS"
 echo "Output CSV: $OUTPUT_CSV"
+echo "Device profile: $DEVICE_PROFILE"
+echo "Start RNG run: $START_RUN"
+echo "Simulation time: $SIMULATION_TIME"
+echo "Distance: $DISTANCE m"
 echo "Simulation dir: $SIM_DIR"
 echo "NS3 dir: $NS3_DIR"
 echo ""
@@ -69,30 +79,39 @@ rm -f "${OUTPUT_CSV}"
 echo -e "${YELLOW}Running simulations...${NC}"
 echo ""
 
-for run in $(seq 1 $NUM_RUNS); do
-    echo -ne "Run $run/$NUM_RUNS... "
+END_RUN=$((START_RUN + NUM_RUNS - 1))
+
+for run in $(seq "${START_RUN}" "${END_RUN}"); do
+    CURRENT_INDEX=$((run - START_RUN + 1))
+    echo -ne "Run ${run} (${CURRENT_INDEX}/${NUM_RUNS})... "
 
     # Run without Bluetooth
     echo -n "[BT off]"
     ${EXECUTABLE} \
+        --device-profile="${DEVICE_PROFILE}" \
         --bluetooth-enabled=false \
         --rng-run=$run \
-        --simulation-time=10s \
-        --distance=30 \
+        --simulation-time="${SIMULATION_TIME}" \
+        --distance="${DISTANCE}" \
         --output-csv="${OUTPUT_CSV}" \
         > /dev/null 2>&1
+    BT_OFF_ROW=$(tail -n 1 "${OUTPUT_CSV}")
 
     echo -n " [BT on]"
     # Run with Bluetooth
     ${EXECUTABLE} \
+        --device-profile="${DEVICE_PROFILE}" \
         --bluetooth-enabled=true \
         --rng-run=$run \
-        --simulation-time=10s \
-        --distance=30 \
+        --simulation-time="${SIMULATION_TIME}" \
+        --distance="${DISTANCE}" \
         --output-csv="${OUTPUT_CSV}" \
         > /dev/null 2>&1
+    BT_ON_ROW=$(tail -n 1 "${OUTPUT_CSV}")
 
-    echo -e " ${GREEN}✓${NC}"
+    BT_OFF_TPUT=$(echo "${BT_OFF_ROW}" | awk -F',' '{print $7}')
+    BT_ON_TPUT=$(echo "${BT_ON_ROW}" | awk -F',' '{print $7}')
+    echo -e " ${GREEN}✓${NC} off=${BT_OFF_TPUT} Mbps on=${BT_ON_TPUT} Mbps"
 done
 
 echo ""

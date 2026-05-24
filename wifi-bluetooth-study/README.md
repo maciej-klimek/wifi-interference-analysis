@@ -85,6 +85,24 @@ This model is useful because it actually adds energy into the WiFi receiver’s 
 
 Important limitation: real Bluetooth headphones usually behave like a low-power, bursty, adaptive-frequency-hopping device. If the jammer power is set too high, the throughput drop can be much larger than what you would expect from actual headphones. In practice, `--bt-power-dbm` is the easiest knob to use when you want to keep the scenario closer to a realistic headset instead of a strong local interferer.
 
+For calibration against a Samsung S24 + Soundcore Liberty 4 scenario, the simulator includes a preset profile:
+
+- `--device-profile=s24-liberty4`
+
+That preset switches the WiFi side to 802.11ax on 2.4 GHz with a 40 MHz channel, and tunes the Bluetooth side as a nearby TWS headset rather than a strong jammer. The current calibration uses short burst windows, 79 hop channels, 625 us dwell time, a small phone-to-earbud offset, and low transmit power so the interference pattern stays closer to a real earbud link than to a synthetic noise source.
+
+Public product listings for the Liberty 4 family describe it as a Bluetooth 5.3-class true wireless headset with ANC and multipoint support. For this simulator that matters mainly in one way: the headset should be treated as a low-power, bursty, frequency-hopping interferer, not as a continuous transmitter.
+
+What is still not modeled:
+
+- the real BLE/Classic Bluetooth link layer and packet scheduling
+- codec-specific behavior such as SBC/AAC/LDAC traffic patterns
+- adaptive frequency hopping decisions based on the channel map
+- antenna orientation, body shadowing, and hand/head absorption
+- the exact coexistence policy inside the phone and earbuds firmware
+
+So the preset is best read as a calibrated interference approximation for an IRL phone + earbuds test, not as a protocol-accurate Liberty 4 emulator.
+
 ## Build
 
 ```bash
@@ -135,7 +153,7 @@ Bluetooth on:
 Run paired BT off / BT on experiments across multiple RNG seeds:
 
 ```bash
-bash scripts/run_sweep.sh 20 results/sweep_results.csv
+bash scripts/run_bluetooth_sweep.sh 20 results/bluetooth/s24-liberty4-sweep.csv
 ```
 
 This generates 40 rows total for `NUM_RUNS=20`: one BT-off and one BT-on row per seed.
@@ -145,13 +163,15 @@ This generates 40 rows total for `NUM_RUNS=20`: one BT-off and one BT-on row per
 Generate the figures from the CSV:
 
 ```bash
-python3 scripts/plot_results.py --csv results/sweep_results.csv --output-dir results
+python3 scripts/plot_bluetooth_results.py --csv results/bluetooth/s24-liberty4-sweep.csv --output-dir results/bluetooth
 ```
 
 The plotting script currently writes:
 
-- `results/throughput_comparison.png`
-- `results/throughput_distribution.png`
+- `results/bluetooth/throughput_comparison.png`
+- `results/bluetooth/throughput_distribution.png`
+
+The microwave experiment uses the same structure under `results/microwave/` with `scripts/run_microwave_sweep.sh` and `scripts/plot_microwave_results.py`.
 
 The first is a bar chart with error bars. The second is a boxplot of throughput distribution for BT off vs on.
 
@@ -172,6 +192,8 @@ Current simulation flags:
 - `--bt-power-dbm`: BT jammer power in dBm. Keep this low if you want a headphone-like scenario.
 - `--bt-hop-dwell-us`: dwell time for each Bluetooth hop.
 - `--bt-hop-count`: number of hop channels across the 2.4 GHz ISM band.
+- `--device-profile`: optional preset such as `s24-liberty4`.
+- `--wifi-channel-width-mhz`: WiFi channel width, used by the WiFi preset and 2.4 GHz calibration runs.
 
 The point of these flags is to separate the radio assumptions from the traffic assumptions. `--data-rate` controls offered load, while `--wifi-standard` controls the PHY capability.
 

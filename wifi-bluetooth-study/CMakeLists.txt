@@ -18,20 +18,37 @@ if(NOT EXISTS "${NS3_LIB_DIR}")
                         "  ./ns3 build")
 endif()
 
-# Add the simulation executable
+# Add the simulation executables
 add_executable(bt-wifi-interference-sim src/bt-wifi-interference-sim.cc)
+add_executable(microwave-interference-sim src/microwave-interference-sim.cc)
 add_executable(test-simple src/test-simple.cc)
 
 # Add include directories
 target_include_directories(bt-wifi-interference-sim PRIVATE "${NS3_INCLUDE_DIR}")
+target_include_directories(microwave-interference-sim PRIVATE "${NS3_INCLUDE_DIR}")
 target_include_directories(test-simple PRIVATE "${NS3_INCLUDE_DIR}")
 
 # Link against ns3 libraries - link all needed modules
 target_link_directories(bt-wifi-interference-sim PRIVATE "${NS3_LIB_DIR}")
+target_link_directories(microwave-interference-sim PRIVATE "${NS3_LIB_DIR}")
 target_link_directories(test-simple PRIVATE "${NS3_LIB_DIR}")
 
 # Link all necessary ns3 libraries - main sim
 target_link_libraries(bt-wifi-interference-sim PRIVATE
+    ns3-dev-core-default
+    ns3-dev-network-default
+    ns3-dev-internet-default
+    ns3-dev-wifi-default
+    ns3-dev-mobility-default
+    ns3-dev-applications-default
+    ns3-dev-propagation-default
+    ns3-dev-spectrum-default
+    ns3-dev-stats-default
+    pthread
+    m
+)
+
+target_link_libraries(microwave-interference-sim PRIVATE
     ns3-dev-core-default
     ns3-dev-network-default
     ns3-dev-internet-default
@@ -59,4 +76,5 @@ target_link_libraries(test-simple PRIVATE
 
 # Set output directory
 set_target_properties(bt-wifi-interference-sim PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+set_target_properties(microwave-interference-sim PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 set_target_properties(test-simple PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
