@@ -12,6 +12,7 @@
 #include "ns3/waveform-generator-helper.h"
 #include "ns3/waveform-generator.h"
 #include "ns3/wifi-module.h"
+
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -23,6 +24,7 @@
 #include <vector>
 
 using namespace ns3;
+
 NS_LOG_COMPONENT_DEFINE("WiFiMicrowave");
 
 struct RxSample
@@ -50,12 +52,17 @@ CreateMicrowavePsd(double centerFrequencyMhz, double txPowerDbm, double bandwidt
     const double upperFrequencyMhz = centerFrequencyMhz + (bandwidthMhz / 2.0);
 
     double activeBandwidthHz = 0.0;
+
     auto bandIterator = psd->ConstBandsBegin();
     for (uint32_t index = 0; index < psd->GetValuesN(); ++index, ++bandIterator)
     {
         const auto& band = *bandIterator;
         const double bandCenterMhz = (band.fl + band.fh) / 2.0 / 1e6;
-        const bool overlaps = (bandCenterMhz >= lowerFrequencyMhz) && (bandCenterMhz <= upperFrequencyMhz);
+
+        const bool overlaps =
+            (bandCenterMhz >= lowerFrequencyMhz) &&
+            (bandCenterMhz <= upperFrequencyMhz);
+
         if (overlaps)
         {
             activeBandwidthHz += (band.fh - band.fl);
@@ -72,7 +79,11 @@ CreateMicrowavePsd(double centerFrequencyMhz, double txPowerDbm, double bandwidt
     {
         const auto& band = *bandIterator;
         const double bandCenterMhz = (band.fl + band.fh) / 2.0 / 1e6;
-        const bool overlaps = (bandCenterMhz >= lowerFrequencyMhz) && (bandCenterMhz <= upperFrequencyMhz);
+
+        const bool overlaps =
+            (bandCenterMhz >= lowerFrequencyMhz) &&
+            (bandCenterMhz <= upperFrequencyMhz);
+
         if (overlaps)
         {
             (*psd)[index] = txPowerW / activeBandwidthHz;
@@ -84,16 +95,19 @@ CreateMicrowavePsd(double centerFrequencyMhz, double txPowerDbm, double bandwidt
 
 std::array<double, 3>
 ComputePhaseThroughput(const std::vector<RxSample>& samples,
-                      double simulationTimeSeconds,
-                      double microwaveOnStartSeconds,
-                      double microwaveOnStopSeconds)
+                       double simulationTimeSeconds,
+                       double microwaveOnStartSeconds,
+                       double microwaveOnStopSeconds)
 {
     std::array<uint64_t, 3> bytesByPhase = {0, 0, 0};
+
     for (const auto& sample : samples)
     {
-        const uint32_t phaseIndex = (sample.timeSeconds < microwaveOnStartSeconds)
-                                        ? 0
-                                        : (sample.timeSeconds < microwaveOnStopSeconds ? 1 : 2);
+        const uint32_t phaseIndex =
+            (sample.timeSeconds < microwaveOnStartSeconds)
+                ? 0
+                : (sample.timeSeconds < microwaveOnStopSeconds ? 1 : 2);
+
         bytesByPhase[phaseIndex] += sample.bytes;
     }
 
@@ -104,11 +118,14 @@ ComputePhaseThroughput(const std::vector<RxSample>& samples,
     };
 
     std::array<double, 3> throughputMbps = {0.0, 0.0, 0.0};
+
     for (uint32_t phaseIndex = 0; phaseIndex < throughputMbps.size(); ++phaseIndex)
     {
         if (phaseDurations[phaseIndex] > 0.0)
         {
-            throughputMbps[phaseIndex] = (bytesByPhase[phaseIndex] * 8.0) / (phaseDurations[phaseIndex] * 1e6);
+            throughputMbps[phaseIndex] =
+                (bytesByPhase[phaseIndex] * 8.0) /
+                (phaseDurations[phaseIndex] * 1e6);
         }
     }
 
@@ -116,16 +133,20 @@ ComputePhaseThroughput(const std::vector<RxSample>& samples,
 }
 
 std::string
-PhaseName(double binMidpointSeconds, double microwaveOnStartSeconds, double microwaveOnStopSeconds)
+PhaseName(double binMidpointSeconds,
+          double microwaveOnStartSeconds,
+          double microwaveOnStopSeconds)
 {
     if (binMidpointSeconds < microwaveOnStartSeconds)
     {
         return "pre";
     }
+
     if (binMidpointSeconds < microwaveOnStopSeconds)
     {
         return "microwave-on";
     }
+
     return "post";
 }
 
@@ -133,27 +154,34 @@ int main(int argc, char* argv[])
 {
     bool microwaveEnabled = true;
     uint32_t rngRun = 1;
+
     Time simTime("12s");
     Time binWidth("100ms");
+
     std::string outputFile = "results/microwave/microwave-sweep.csv";
     std::string dataRateStr = "80Mbps";
     std::string wifiStandardStr = "802.11n";
     std::string deviceProfileStr = "baseline";
+
     double wifiChannelNumber = 6.0;
     double wifiChannelWidthMhz = 20.0;
+
     double station1DistanceM = 8.0;
     double station2DistanceM = 12.0;
     double station2OffsetYM = 3.0;
+
     double microwaveX = 5.5;
     double microwaveY = 1.5;
+
     double microwaveOnStartSeconds = 4.0;
     double microwaveOnStopSeconds = 8.0;
-    double microwavePowerDbm = -10.0;
-    double microwaveCenterFrequencyMhz = 2450.0;
-    double microwaveBandwidthMhz = 20.0;
-    double microwavePeriodSeconds = 0.05;
-    double microwaveDutyCycle = 0.35;
 
+    double microwavePowerDbm = -20.0;
+    double microwaveCenterFrequencyMhz = 2450.0;
+    double microwaveBandwidthMhz = 10.0;
+    double microwavePeriodSeconds = 0.06;
+    double microwaveDutyCycle = 0.20;
+    
     CommandLine cmd(__FILE__);
     cmd.AddValue("microwave-enabled", "Enable microwave interferer", microwaveEnabled);
     cmd.AddValue("rng-run", "RNG run", rngRun);
@@ -172,11 +200,11 @@ int main(int argc, char* argv[])
     cmd.AddValue("microwave-y-m", "Microwave y-position", microwaveY);
     cmd.AddValue("mw-on-start-s", "Microwave activation time", microwaveOnStartSeconds);
     cmd.AddValue("mw-on-stop-s", "Microwave deactivation time", microwaveOnStopSeconds);
-    cmd.AddValue("mw-power-dbm", "Microwave leakage power in dBm", microwavePowerDbm);
-    cmd.AddValue("mw-center-frequency-mhz", "Microwave center frequency in MHz", microwaveCenterFrequencyMhz);
-    cmd.AddValue("mw-bandwidth-mhz", "Microwave occupied bandwidth in MHz", microwaveBandwidthMhz);
-    cmd.AddValue("mw-period-s", "Microwave emission period in seconds", microwavePeriodSeconds);
-    cmd.AddValue("mw-duty-cycle", "Microwave emission duty cycle", microwaveDutyCycle);
+    cmd.AddValue("mw-power-dbm", "Mean microwave leakage power in dBm", microwavePowerDbm);
+    cmd.AddValue("mw-center-frequency-mhz", "Mean microwave center frequency in MHz", microwaveCenterFrequencyMhz);
+    cmd.AddValue("mw-bandwidth-mhz", "Mean microwave occupied bandwidth in MHz", microwaveBandwidthMhz);
+    cmd.AddValue("mw-period-s", "Mean microwave emission period in seconds", microwavePeriodSeconds);
+    cmd.AddValue("mw-duty-cycle", "Mean microwave emission duty cycle", microwaveDutyCycle);
     cmd.Parse(argc, argv);
 
     if (deviceProfileStr == "kitchen-microwave")
@@ -184,19 +212,24 @@ int main(int argc, char* argv[])
         wifiStandardStr = "802.11n";
         wifiChannelNumber = 6.0;
         wifiChannelWidthMhz = 20.0;
+
         dataRateStr = "80Mbps";
+
         station1DistanceM = 8.0;
         station2DistanceM = 12.0;
         station2OffsetYM = 3.0;
+
         microwaveX = 5.5;
         microwaveY = 1.5;
+
         microwaveOnStartSeconds = 4.0;
         microwaveOnStopSeconds = 8.0;
-        microwavePowerDbm = -10.0;
+
+        microwavePowerDbm = -20.0;
         microwaveCenterFrequencyMhz = 2450.0;
-        microwaveBandwidthMhz = 20.0;
-        microwavePeriodSeconds = 0.05;
-        microwaveDutyCycle = 0.35;
+        microwaveBandwidthMhz = 10.0;
+        microwavePeriodSeconds = 0.06;
+        microwaveDutyCycle = 0.20;
     }
 
     if (microwaveOnStopSeconds <= microwaveOnStartSeconds)
@@ -220,12 +253,15 @@ int main(int argc, char* argv[])
     }
 
     RngSeedManager::SetRun(rngRun);
-    NS_LOG_INFO("WiFi microwave simulation: microwave=" << (microwaveEnabled ? "on" : "off"));
+
+    NS_LOG_INFO("WiFi microwave simulation: microwave="
+                << (microwaveEnabled ? "on" : "off"));
 
     NodeContainer nodes;
     nodes.Create(4);
 
     WifiHelper wifi;
+
     if (wifiStandardStr == "802.11b" || wifiStandardStr == "b")
     {
         wifi.SetStandard(WIFI_STANDARD_80211b);
@@ -263,16 +299,29 @@ int main(int argc, char* argv[])
     }
 
     SpectrumWifiPhyHelper phy(1);
-    Ptr<MultiModelSpectrumChannel> spectrumChannel = CreateObject<MultiModelSpectrumChannel>();
-    Ptr<FriisPropagationLossModel> lossModel = CreateObject<FriisPropagationLossModel>();
+
+    Ptr<MultiModelSpectrumChannel> spectrumChannel =
+        CreateObject<MultiModelSpectrumChannel>();
+
+    Ptr<FriisPropagationLossModel> lossModel =
+        CreateObject<FriisPropagationLossModel>();
+
     lossModel->SetFrequency(2.412e9);
     spectrumChannel->AddPropagationLossModel(lossModel);
-    Ptr<ConstantSpeedPropagationDelayModel> delayModel = CreateObject<ConstantSpeedPropagationDelayModel>();
+
+    Ptr<ConstantSpeedPropagationDelayModel> delayModel =
+        CreateObject<ConstantSpeedPropagationDelayModel>();
+
     spectrumChannel->SetPropagationDelayModel(delayModel);
     phy.AddChannel(spectrumChannel, WIFI_SPECTRUM_2_4_GHZ);
 
     std::ostringstream channelSettings;
-    channelSettings << "{" << wifiChannelNumber << ", " << wifiChannelWidthMhz << ", BAND_2_4GHZ, 0}";
+    channelSettings << "{"
+                    << wifiChannelNumber
+                    << ", "
+                    << wifiChannelWidthMhz
+                    << ", BAND_2_4GHZ, 0}";
+
     phy.Set(0, "ChannelSettings", StringValue(channelSettings.str()));
     phy.Set(0, "TxPowerStart", DoubleValue(20.0));
     phy.Set(0, "TxPowerEnd", DoubleValue(20.0));
@@ -289,10 +338,12 @@ int main(int argc, char* argv[])
 
     MobilityHelper mobility;
     Ptr<ListPositionAllocator> pos = CreateObject<ListPositionAllocator>();
+
     pos->Add(Vector(0.0, 0.0, 0.0));
     pos->Add(Vector(station1DistanceM, 0.0, 0.0));
     pos->Add(Vector(station2DistanceM, station2OffsetYM, 0.0));
     pos->Add(Vector(microwaveX, microwaveY, 0.0));
+
     mobility.SetPositionAllocator(pos);
     mobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
     mobility.Install(nodes);
@@ -304,6 +355,7 @@ int main(int argc, char* argv[])
 
     Ipv4AddressHelper addr;
     addr.SetBase("10.2.0.0", "255.255.255.0");
+
     Ipv4InterfaceContainer ifaces = addr.Assign(devs);
 
     Ipv4Address sta1Addr = ifaces.GetAddress(1);
@@ -312,67 +364,150 @@ int main(int argc, char* argv[])
     uint16_t port1 = 9;
     uint16_t port2 = 10;
 
-    PacketSinkHelper sink1("ns3::UdpSocketFactory", InetSocketAddress(Ipv4Address::GetAny(), port1));
-    PacketSinkHelper sink2("ns3::UdpSocketFactory", InetSocketAddress(Ipv4Address::GetAny(), port2));
+    PacketSinkHelper sink1("ns3::UdpSocketFactory",
+                           InetSocketAddress(Ipv4Address::GetAny(), port1));
+
+    PacketSinkHelper sink2("ns3::UdpSocketFactory",
+                           InetSocketAddress(Ipv4Address::GetAny(), port2));
+
     ApplicationContainer sinkApps1 = sink1.Install(nodes.Get(1));
     ApplicationContainer sinkApps2 = sink2.Install(nodes.Get(2));
+
     sinkApps1.Start(Seconds(0.0));
     sinkApps1.Stop(simTime);
+
     sinkApps2.Start(Seconds(0.0));
     sinkApps2.Stop(simTime);
 
-    OnOffHelper source1("ns3::UdpSocketFactory", InetSocketAddress(sta1Addr, port1));
-    source1.SetAttribute("OnTime", StringValue("ns3::ConstantRandomVariable[Constant=1]"));
-    source1.SetAttribute("OffTime", StringValue("ns3::ConstantRandomVariable[Constant=0]"));
-    source1.SetAttribute("DataRate", DataRateValue(DataRate(dataRateStr)));
+    OnOffHelper source1("ns3::UdpSocketFactory",
+                        InetSocketAddress(sta1Addr, port1));
+
+    source1.SetAttribute("OnTime",
+                         StringValue("ns3::ConstantRandomVariable[Constant=1]"));
+
+    source1.SetAttribute("OffTime",
+                         StringValue("ns3::ConstantRandomVariable[Constant=0]"));
+
+    source1.SetAttribute("DataRate",
+                         DataRateValue(DataRate(dataRateStr)));
+
     source1.SetAttribute("PacketSize", UintegerValue(1024));
+
     ApplicationContainer sourceApps1 = source1.Install(nodes.Get(0));
     sourceApps1.Start(Seconds(0.5));
     sourceApps1.Stop(simTime);
 
-    OnOffHelper source2("ns3::UdpSocketFactory", InetSocketAddress(sta2Addr, port2));
-    source2.SetAttribute("OnTime", StringValue("ns3::ConstantRandomVariable[Constant=1]"));
-    source2.SetAttribute("OffTime", StringValue("ns3::ConstantRandomVariable[Constant=0]"));
-    source2.SetAttribute("DataRate", DataRateValue(DataRate(dataRateStr)));
+    OnOffHelper source2("ns3::UdpSocketFactory",
+                        InetSocketAddress(sta2Addr, port2));
+
+    source2.SetAttribute("OnTime",
+                         StringValue("ns3::ConstantRandomVariable[Constant=1]"));
+
+    source2.SetAttribute("OffTime",
+                         StringValue("ns3::ConstantRandomVariable[Constant=0]"));
+
+    source2.SetAttribute("DataRate",
+                         DataRateValue(DataRate(dataRateStr)));
+
     source2.SetAttribute("PacketSize", UintegerValue(1024));
+
     ApplicationContainer sourceApps2 = source2.Install(nodes.Get(0));
     sourceApps2.Start(Seconds(0.5));
     sourceApps2.Stop(simTime);
 
     if (microwaveEnabled)
     {
-        Ptr<SpectrumValue> microwavePsd = CreateMicrowavePsd(microwaveCenterFrequencyMhz, microwavePowerDbm, microwaveBandwidthMhz);
-        WaveformGeneratorHelper waveformGeneratorHelper;
-        waveformGeneratorHelper.SetChannel(spectrumChannel);
-        waveformGeneratorHelper.SetTxPowerSpectralDensity(microwavePsd);
-        waveformGeneratorHelper.SetPhyAttribute("Period", TimeValue(Seconds(microwavePeriodSeconds)));
-        waveformGeneratorHelper.SetPhyAttribute("DutyCycle", DoubleValue(microwaveDutyCycle));
+        Ptr<UniformRandomVariable> powerRv = CreateObject<UniformRandomVariable>();
+        powerRv->SetAttribute("Min", DoubleValue(microwavePowerDbm - 2.0));
+        powerRv->SetAttribute("Max", DoubleValue(microwavePowerDbm + 1.5));
 
-        NetDeviceContainer microwaveDevices = waveformGeneratorHelper.Install(nodes.Get(3));
-        Ptr<WaveformGenerator> microwaveWaveform = microwaveDevices.Get(0)
-                                                       ->GetObject<NonCommunicatingNetDevice>()
-                                                       ->GetPhy()
-                                                       ->GetObject<WaveformGenerator>();
-        Simulator::Schedule(Seconds(microwaveOnStartSeconds), &WaveformGenerator::Start, microwaveWaveform);
-        Simulator::Schedule(Seconds(microwaveOnStopSeconds), &WaveformGenerator::Stop, microwaveWaveform);
+        Ptr<UniformRandomVariable> frequencyRv = CreateObject<UniformRandomVariable>();
+        frequencyRv->SetAttribute("Min", DoubleValue(microwaveCenterFrequencyMhz - 3.0));
+        frequencyRv->SetAttribute("Max", DoubleValue(microwaveCenterFrequencyMhz + 3.0));
+
+        Ptr<UniformRandomVariable> bandwidthRv = CreateObject<UniformRandomVariable>();
+        bandwidthRv->SetAttribute("Min", DoubleValue(6.0));
+        bandwidthRv->SetAttribute("Max", DoubleValue(12.0));
+
+        Ptr<UniformRandomVariable> periodRv = CreateObject<UniformRandomVariable>();
+        periodRv->SetAttribute("Min", DoubleValue(0.035));
+        periodRv->SetAttribute("Max", DoubleValue(0.14));
+
+        Ptr<UniformRandomVariable> dutyRv = CreateObject<UniformRandomVariable>();
+        dutyRv->SetAttribute("Min", DoubleValue(0.08));
+        dutyRv->SetAttribute("Max", DoubleValue(0.35));
+
+        for (double t = microwaveOnStartSeconds; t < microwaveOnStopSeconds;)
+        {
+            const double localPeriod = periodRv->GetValue();
+            const double localDutyCycle = dutyRv->GetValue();
+            const double localOnTime = std::max(0.001, localPeriod * localDutyCycle);
+
+            const double localPowerDbm = powerRv->GetValue();
+            const double localFrequencyMhz = frequencyRv->GetValue();
+            const double localBandwidthMhz = bandwidthRv->GetValue();
+
+            Ptr<SpectrumValue> microwavePsd =
+                CreateMicrowavePsd(localFrequencyMhz,
+                                   localPowerDbm,
+                                   localBandwidthMhz);
+
+            WaveformGeneratorHelper waveformGeneratorHelper;
+            waveformGeneratorHelper.SetChannel(spectrumChannel);
+            waveformGeneratorHelper.SetTxPowerSpectralDensity(microwavePsd);
+            waveformGeneratorHelper.SetPhyAttribute("Period",
+                                                    TimeValue(Seconds(localPeriod)));
+            waveformGeneratorHelper.SetPhyAttribute("DutyCycle",
+                                                    DoubleValue(1.0));
+
+            NetDeviceContainer microwaveDevices =
+                waveformGeneratorHelper.Install(nodes.Get(3));
+
+            Ptr<WaveformGenerator> microwaveWaveform =
+                microwaveDevices.Get(0)
+                    ->GetObject<NonCommunicatingNetDevice>()
+                    ->GetPhy()
+                    ->GetObject<WaveformGenerator>();
+
+            const double start = t;
+            const double stop =
+                std::min(t + localOnTime, microwaveOnStopSeconds);
+
+            Simulator::Schedule(Seconds(start),
+                                &WaveformGenerator::Start,
+                                microwaveWaveform);
+
+            Simulator::Schedule(Seconds(stop),
+                                &WaveformGenerator::Stop,
+                                microwaveWaveform);
+
+            t += localPeriod;
+        }
     }
 
     Ptr<PacketSink> sinkPtr1 = DynamicCast<PacketSink>(sinkApps1.Get(0));
     Ptr<PacketSink> sinkPtr2 = DynamicCast<PacketSink>(sinkApps2.Get(0));
-    sinkPtr1->TraceConnectWithoutContext("Rx", MakeBoundCallback(&PacketRx, 0));
-    sinkPtr2->TraceConnectWithoutContext("Rx", MakeBoundCallback(&PacketRx, 1));
+
+    sinkPtr1->TraceConnectWithoutContext("Rx",
+                                         MakeBoundCallback(&PacketRx, 0));
+
+    sinkPtr2->TraceConnectWithoutContext("Rx",
+                                         MakeBoundCallback(&PacketRx, 1));
 
     Simulator::Stop(simTime);
     Simulator::Run();
 
     const double simulationTimeSeconds = simTime.GetSeconds();
     const double binWidthSeconds = binWidth.GetSeconds();
-    const uint32_t numBins = static_cast<uint32_t>(std::ceil(simulationTimeSeconds / binWidthSeconds));
+
+    const uint32_t numBins =
+        static_cast<uint32_t>(std::ceil(simulationTimeSeconds / binWidthSeconds));
 
     std::array<std::vector<double>, 2> binThroughputMbps;
     std::array<std::vector<std::string>, 2> binPhase;
     std::array<std::vector<uint8_t>, 2> binMicrowaveActive;
     std::array<std::vector<uint64_t>, 2> binBytes;
+
     for (auto stationIndex = 0u; stationIndex < 2; ++stationIndex)
     {
         binThroughputMbps[stationIndex].assign(numBins, 0.0);
@@ -385,51 +520,90 @@ int main(int argc, char* argv[])
     {
         for (const auto& sample : g_rxSamples[stationIndex])
         {
-            uint32_t binIndex = static_cast<uint32_t>(sample.timeSeconds / binWidthSeconds);
+            uint32_t binIndex =
+                static_cast<uint32_t>(sample.timeSeconds / binWidthSeconds);
+
             if (binIndex >= numBins)
             {
                 binIndex = numBins - 1;
             }
+
             binBytes[stationIndex][binIndex] += sample.bytes;
         }
 
         for (uint32_t binIndex = 0; binIndex < numBins; ++binIndex)
         {
             const double binStartSeconds = binIndex * binWidthSeconds;
-            const double binEndSeconds = std::min(simulationTimeSeconds, binStartSeconds + binWidthSeconds);
-            const double effectiveBinWidthSeconds = std::max(1e-9, binEndSeconds - binStartSeconds);
-            const double binMidpointSeconds = (binStartSeconds + binEndSeconds) / 2.0;
-            binThroughputMbps[stationIndex][binIndex] = (binBytes[stationIndex][binIndex] * 8.0) / (effectiveBinWidthSeconds * 1e6);
-            binPhase[stationIndex][binIndex] = PhaseName(binMidpointSeconds, microwaveOnStartSeconds, microwaveOnStopSeconds);
-            binMicrowaveActive[stationIndex][binIndex] = (binPhase[stationIndex][binIndex] == "microwave-on") ? 1 : 0;
+
+            const double binEndSeconds =
+                std::min(simulationTimeSeconds,
+                         binStartSeconds + binWidthSeconds);
+
+            const double effectiveBinWidthSeconds =
+                std::max(1e-9, binEndSeconds - binStartSeconds);
+
+            const double binMidpointSeconds =
+                (binStartSeconds + binEndSeconds) / 2.0;
+
+            binThroughputMbps[stationIndex][binIndex] =
+                (binBytes[stationIndex][binIndex] * 8.0) /
+                (effectiveBinWidthSeconds * 1e6);
+
+            binPhase[stationIndex][binIndex] =
+                PhaseName(binMidpointSeconds,
+                          microwaveOnStartSeconds,
+                          microwaveOnStopSeconds);
+
+            binMicrowaveActive[stationIndex][binIndex] =
+                (binPhase[stationIndex][binIndex] == "microwave-on") ? 1 : 0;
         }
     }
 
-    std::array<double, 3> sta1PhaseThroughput = ComputePhaseThroughput(g_rxSamples[0], simulationTimeSeconds, microwaveOnStartSeconds, microwaveOnStopSeconds);
-    std::array<double, 3> sta2PhaseThroughput = ComputePhaseThroughput(g_rxSamples[1], simulationTimeSeconds, microwaveOnStartSeconds, microwaveOnStopSeconds);
+    std::array<double, 3> sta1PhaseThroughput =
+        ComputePhaseThroughput(g_rxSamples[0],
+                               simulationTimeSeconds,
+                               microwaveOnStartSeconds,
+                               microwaveOnStopSeconds);
+
+    std::array<double, 3> sta2PhaseThroughput =
+        ComputePhaseThroughput(g_rxSamples[1],
+                               simulationTimeSeconds,
+                               microwaveOnStartSeconds,
+                               microwaveOnStopSeconds);
 
     std::cout << std::fixed << std::setprecision(2);
+
     std::cout << "Run " << rngRun << ": "
               << "STA1 pre=" << sta1PhaseThroughput[0] << " Mbps, "
               << "microwave-on=" << sta1PhaseThroughput[1] << " Mbps, "
               << "post=" << sta1PhaseThroughput[2] << " Mbps; "
               << "STA2 pre=" << sta2PhaseThroughput[0] << " Mbps, "
               << "microwave-on=" << sta2PhaseThroughput[1] << " Mbps, "
-              << "post=" << sta2PhaseThroughput[2] << " Mbps" << std::endl;
+              << "post=" << sta2PhaseThroughput[2] << " Mbps"
+              << std::endl;
 
     std::ofstream csv(outputFile, std::ios::app);
+
     if (csv.tellp() == 0)
     {
-        csv << "rng_run,station_id,station_label,bin_index,bin_start_s,bin_end_s,microwave_active,phase,rx_bytes,throughput_mbps\n";
+        csv << "rng_run,station_id,station_label,bin_index,"
+            << "bin_start_s,bin_end_s,microwave_active,phase,"
+            << "rx_bytes,throughput_mbps\n";
     }
 
     for (uint32_t stationIndex = 0; stationIndex < 2; ++stationIndex)
     {
-        const std::string stationLabel = (stationIndex == 0) ? "sta1" : "sta2";
+        const std::string stationLabel =
+            (stationIndex == 0) ? "sta1" : "sta2";
+
         for (uint32_t binIndex = 0; binIndex < numBins; ++binIndex)
         {
             const double binStartSeconds = binIndex * binWidthSeconds;
-            const double binEndSeconds = std::min(simulationTimeSeconds, binStartSeconds + binWidthSeconds);
+
+            const double binEndSeconds =
+                std::min(simulationTimeSeconds,
+                         binStartSeconds + binWidthSeconds);
+
             csv << rngRun << ","
                 << stationIndex << ","
                 << stationLabel << ","
@@ -439,7 +613,8 @@ int main(int argc, char* argv[])
                 << static_cast<uint32_t>(binMicrowaveActive[stationIndex][binIndex]) << ","
                 << binPhase[stationIndex][binIndex] << ","
                 << binBytes[stationIndex][binIndex] << ","
-                << std::fixed << std::setprecision(4) << binThroughputMbps[stationIndex][binIndex] << "\n";
+                << std::fixed << std::setprecision(4)
+                << binThroughputMbps[stationIndex][binIndex] << "\n";
         }
     }
 
