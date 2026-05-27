@@ -92,7 +92,7 @@ int main(int argc, char* argv[])
         wifiStandardStr = "802.11ax";
         wifiChannelNumber = 0.0;
         wifiChannelWidthMhz = 40.0;
-        dataRateStr = "50Mbps";
+        dataRateStr = "250Mbps";
         btBurstOnMs = 2.5;
         btBurstPeriodMs = 7.5;
         btDistance = 0.02;
@@ -104,12 +104,12 @@ int main(int argc, char* argv[])
         wifiChannelNumber = 1.0;
         wifiChannelWidthMhz = 20.0;
         dataRateStr = "50Mbps";
-        btBurstOnMs = 5.0;
+        btBurstOnMs = 6.5;
         btBurstPeriodMs = 7.5;
         btDistance = 0.01;
         btPowerDbm = 3.0;
         btHopDwellUs = 625.0;
-        btHopCount = 1;
+        btHopCount = 79;
     }
 
     RngSeedManager::SetRun(rngRun);
@@ -219,6 +219,9 @@ int main(int argc, char* argv[])
         const uint32_t hopsPerBurst = std::max<uint32_t>(1, static_cast<uint32_t>(burstOnSeconds / hopDwellSeconds));
         const uint32_t btHopSequenceStride = 17;
         const double btBaseFrequencyMhz = 2402.0;
+        const uint32_t overlapHopCount = std::min<uint32_t>(21, btHopCount);
+        const uint32_t nonOverlapHopCount = (btHopCount > overlapHopCount) ? (btHopCount - overlapHopCount) : 0;
+        const uint32_t overlapBiasPercent = 65;
 
         for (double burstStart = 0.1; burstStart < simTime.GetSeconds(); burstStart += burstPeriodSeconds)
         {
@@ -230,8 +233,18 @@ int main(int argc, char* argv[])
                     break;
                 }
 
-                const uint32_t hopIndex = (rngRun * 13 + static_cast<uint32_t>(burstStart * 1000.0) +
-                                           hopInBurst * btHopSequenceStride) % btHopCount;
+                const uint32_t hopSeed = rngRun * 13 + static_cast<uint32_t>(burstStart * 1000.0) +
+                                         hopInBurst * btHopSequenceStride;
+                uint32_t hopIndex = 0;
+                if (nonOverlapHopCount == 0 || (hopSeed % 100) < overlapBiasPercent)
+                {
+                    hopIndex = hopSeed % overlapHopCount;
+                }
+                else
+                {
+                    hopIndex = overlapHopCount + (hopSeed % nonOverlapHopCount);
+                }
+
                 const double hopFrequencyMhz = btBaseFrequencyMhz + hopIndex;
                 Ptr<SpectrumValue> btPsd = CreateBluetoothHopPsd(hopFrequencyMhz, btPowerDbm);
 
