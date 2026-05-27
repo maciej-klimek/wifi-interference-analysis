@@ -1,3 +1,3 @@
 rng_run,bluetooth_enabled,distance_m,simulation_time_s,rx_packets,rx_bytes,throughput_mbps
-1,0,3,10,52151,53402624,42.7221
-1,1,3,10,32599,33381376,26.7051
+1,0,3,10,57938,59328512,47.4628
+1,1,3,10,57933,59323392,47.4587

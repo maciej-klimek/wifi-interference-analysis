@@ -54,12 +54,13 @@ int main(int argc, char* argv[])
     bool btEnabled = false;
     uint32_t rngRun = 1;
     Time simTime("10s");
-    double distance = 30.0;
+    double distance = 15.0;
     std::string outputFile = "results/wifi-bluetooth-results.csv";
     std::string dataRateStr = "10Mbps";
     std::string wifiStandardStr = "802.11g";
     std::string deviceProfileStr = "baseline";
     double wifiChannelWidthMhz = 20.0;
+    double wifiChannelNumber = 0.0;
     double btBurstOnMs = 2.0;
     double btBurstPeriodMs = 50.0;
     double btDistance = 0.1;
@@ -75,7 +76,8 @@ int main(int argc, char* argv[])
     cmd.AddValue("output-csv", "Output CSV", outputFile);
     cmd.AddValue("data-rate", "AP offered data rate (e.g. 150Mbps)", dataRateStr);
     cmd.AddValue("wifi-standard", "WiFi standard to use: 802.11b, 802.11g, 802.11n (2.4GHz)", wifiStandardStr);
-    cmd.AddValue("device-profile", "Device profile preset (baseline, s24-liberty4)", deviceProfileStr);
+    cmd.AddValue("device-profile", "Device profile preset (baseline, s24-liberty4, iphone-liberty4)", deviceProfileStr);
+    cmd.AddValue("wifi-channel-number", "WiFi channel number", wifiChannelNumber);
     cmd.AddValue("wifi-channel-width-mhz", "WiFi channel width in MHz", wifiChannelWidthMhz);
     cmd.AddValue("bt-burst-on-ms", "BT burst ON duration in milliseconds (default 2ms)", btBurstOnMs);
     cmd.AddValue("bt-burst-period-ms", "BT burst period in milliseconds (default 50ms)", btBurstPeriodMs);
@@ -85,17 +87,29 @@ int main(int argc, char* argv[])
     cmd.AddValue("bt-hop-count", "Number of BT hop channels in 2.4 GHz", btHopCount);
     cmd.Parse(argc, argv);
 
-    if (deviceProfileStr == "s24-liberty4") {
+    if (deviceProfileStr == "s24") {
+        // Original Liberty 4 preset used before the physical calibration.
         wifiStandardStr = "802.11ax";
+        wifiChannelNumber = 0.0;
         wifiChannelWidthMhz = 40.0;
-        dataRateStr = "250Mbps";
-        // Calibrated as a nearby TWS headset rather than a strong local jammer.
+        dataRateStr = "50Mbps";
         btBurstOnMs = 2.5;
         btBurstPeriodMs = 7.5;
         btDistance = 0.02;
         btPowerDbm = -3.0;
         btHopDwellUs = 625.0;
         btHopCount = 79;
+    } else if (deviceProfileStr == "iphone") {
+        wifiStandardStr = "802.11n";
+        wifiChannelNumber = 1.0;
+        wifiChannelWidthMhz = 20.0;
+        dataRateStr = "50Mbps";
+        btBurstOnMs = 5.0;
+        btBurstPeriodMs = 7.5;
+        btDistance = 0.01;
+        btPowerDbm = 3.0;
+        btHopDwellUs = 625.0;
+        btHopCount = 1;
     }
 
     RngSeedManager::SetRun(rngRun);
@@ -145,7 +159,7 @@ int main(int argc, char* argv[])
     spectrumChannel->SetPropagationDelayModel(delayModel);
     phy.AddChannel(spectrumChannel, WIFI_SPECTRUM_2_4_GHZ);
     std::ostringstream channelSettings;
-    channelSettings << "{0, " << wifiChannelWidthMhz << ", BAND_2_4GHZ, 0}";
+    channelSettings << "{" << wifiChannelNumber << ", " << wifiChannelWidthMhz << ", BAND_2_4GHZ, 0}";
     phy.Set(0, "ChannelSettings", StringValue(channelSettings.str()));
     phy.Set(0, "TxPowerStart", DoubleValue(20.0));
     phy.Set(0, "TxPowerEnd", DoubleValue(20.0));
