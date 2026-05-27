@@ -24,10 +24,15 @@ NS_LOG_COMPONENT_DEFINE("WiFiBT");
 
 uint64_t g_rxBytes = 0;
 uint32_t g_rxPackets = 0;
+bool debugHops = false;
 
 void PacketRx(Ptr<const Packet> p, const Address& a) {
     g_rxBytes += p->GetSize();
     g_rxPackets++;
+    if (debugHops && g_rxPackets <= 100) {
+        std::cout << "PKT_DBG: time=" << Simulator::Now().GetSeconds()
+                  << " size=" << p->GetSize() << " total_rx=" << g_rxPackets << std::endl;
+    }
 }
 
 Ptr<SpectrumValue>
@@ -53,7 +58,7 @@ int main(int argc, char* argv[])
 {
     bool btEnabled = false;
     uint32_t rngRun = 1;
-    Time simTime("10s");
+    Time simTime("50s");
     double distance = 15.0;
     std::string outputFile = "results/wifi-bluetooth-results.csv";
     std::string dataRateStr = "10Mbps";
@@ -85,6 +90,7 @@ int main(int argc, char* argv[])
     cmd.AddValue("bt-power-dbm", "BT interferer power in dBm", btPowerDbm);
     cmd.AddValue("bt-hop-dwell-us", "BT hop dwell time in microseconds", btHopDwellUs);
     cmd.AddValue("bt-hop-count", "Number of BT hop channels in 2.4 GHz", btHopCount);
+    cmd.AddValue("debug-hops", "Print per-hop debug info", debugHops);
     cmd.Parse(argc, argv);
 
     if (deviceProfileStr == "s24") {
@@ -246,6 +252,17 @@ int main(int argc, char* argv[])
                 }
 
                 const double hopFrequencyMhz = btBaseFrequencyMhz + hopIndex;
+                if (debugHops)
+                {
+                    std::cout << "HOP_DBG: run=" << rngRun
+                              << " burstStart=" << burstStart
+                              << " hopInBurst=" << hopInBurst
+                              << " hopIndex=" << hopIndex
+                              << " freqMHz=" << hopFrequencyMhz
+                              << " start=" << hopStart
+                              << " dwell_s=" << hopDwellSeconds
+                              << std::endl;
+                }
                 Ptr<SpectrumValue> btPsd = CreateBluetoothHopPsd(hopFrequencyMhz, btPowerDbm);
 
                 WaveformGeneratorHelper waveformGeneratorHelper;
